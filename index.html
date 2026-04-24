@@ -113,6 +113,22 @@
   .modal-score span{color:var(--green);}
   .modal-btn{background:var(--accent);color:#fff;border:none;border-radius:9px;font-family:'Nunito',sans-serif;font-weight:800;font-size:0.9rem;padding:10px 26px;cursor:pointer;width:100%;}
 
+  /* ---- ŞIFRE EKRANI ---- */
+  .pass-overlay{display:none;position:fixed;inset:0;background:#000a;z-index:999;align-items:center;justify-content:center;}
+  .pass-overlay.show{display:flex;}
+  .pass-box{background:var(--card2);border:2px solid var(--accent);border-radius:18px;padding:32px 28px;text-align:center;max-width:300px;width:90%;box-shadow:0 0 40px #3498db44;animation:popIn 0.3s cubic-bezier(.4,1.4,.6,1);}
+  .pass-box h3{font-family:'Orbitron',sans-serif;font-size:0.85rem;color:var(--accent);letter-spacing:1.5px;margin-bottom:8px;}
+  .pass-box p{font-size:0.78rem;color:var(--muted);margin-bottom:18px;}
+  .pass-input{width:100%;background:#0d1923;border:2px solid var(--border);border-radius:10px;color:var(--text);font-family:'Nunito',sans-serif;font-size:1.1rem;font-weight:800;padding:11px 16px;outline:none;text-align:center;letter-spacing:4px;transition:border-color 0.2s;}
+  .pass-input:focus{border-color:var(--accent);}
+  .pass-input.wrong{border-color:var(--red);animation:shake 0.4s;}
+  @keyframes shake{0%,100%{transform:translateX(0);}25%{transform:translateX(-8px);}75%{transform:translateX(8px);}}
+  .pass-btn{margin-top:14px;width:100%;background:var(--accent);color:#fff;border:none;border-radius:10px;font-family:'Nunito',sans-serif;font-weight:800;font-size:0.9rem;padding:11px;cursor:pointer;transition:all 0.2s;}
+  .pass-btn:hover{background:#2980b9;}
+  .pass-cancel{margin-top:8px;width:100%;background:transparent;color:var(--muted);border:none;font-family:'Nunito',sans-serif;font-weight:700;font-size:0.8rem;cursor:pointer;padding:6px;}
+  .pass-cancel:hover{color:var(--text);}
+  .pass-error{font-size:0.78rem;color:var(--red);margin-top:8px;min-height:18px;font-weight:700;}
+
   ::-webkit-scrollbar{width:5px;}
   ::-webkit-scrollbar-track{background:var(--bg);}
   ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
@@ -121,11 +137,12 @@
 <body>
 
 <header>
-  <div class="logo-row">
-    <div class="logo-icon">🌿</div>
-    <div>
-      <h1>DOĞA KOLEJİ</h1>
-      <div class="subtitle">Günlük Denetim Formu</div>
+  <div class="logo-row" style="flex-direction:column;align-items:center;gap:12px;">
+    <img src="https://control-e-del.github.io/denetim/logo.jfif" alt="EduControl Logo" style="height:110px;width:110px;object-fit:contain;border-radius:18px;background:#fff;padding:4px;">
+    <div style="text-align:center;">
+      <h1 style="font-size:1.4rem;letter-spacing:2px;">EduControl</h1>
+      <div class="subtitle" style="letter-spacing:2.5px;">Kontrol Sende · Güven Heryerde</div>
+      <div style="font-size:0.68rem;color:#2ecc71;font-weight:800;letter-spacing:2px;text-transform:uppercase;margin-top:5px;">Doğa Koleji · Antep</div>
     </div>
   </div>
   <div class="progress-wrap">
@@ -144,9 +161,9 @@
 </div>
 
 <div class="tab-bar">
-  <button class="tab-btn t-ariza active" onclick="switchTab('ariza')">🔨 Arıza Kaydı</button>
-  <button class="tab-btn" onclick="switchTab('onburo')">🏢 Ön Büro & Danışma</button>
-  <button class="tab-btn" onclick="switchTab('personel')">👥 Personel</button>
+  <button class="tab-btn t-ariza active" id="tabbtn-ariza" onclick="switchTab('ariza')">🔨 Arıza Kaydı</button>
+  <button class="tab-btn" id="tabbtn-onburo" onclick="switchTab('onburo')">🏢 Ön Büro & Danışma</button>
+  <button class="tab-btn" id="tabbtn-personel" onclick="switchTab('personel')">👥 Personel</button>
 </div>
 
 <!-- TAB 1 -->
@@ -210,6 +227,18 @@
   </div>
 </div>
 
+<!-- ŞIFRE OVERLAY -->
+<div class="pass-overlay" id="pass-overlay">
+  <div class="pass-box">
+    <h3 id="pass-title">🔒 GİRİŞ ŞİFRESİ</h3>
+    <p id="pass-desc">Bu bölüme erişmek için şifrenizi giriniz.</p>
+    <input class="pass-input" type="password" id="pass-input" placeholder="••••••••" maxlength="20"/>
+    <div class="pass-error" id="pass-error"></div>
+    <button class="pass-btn" onclick="checkPass()">Giriş Yap</button>
+    <button class="pass-cancel" onclick="cancelPass()">İptal</button>
+  </div>
+</div>
+
 <!-- MODAL -->
 <div class="modal-overlay" id="modal-overlay">
   <div class="modal">
@@ -230,19 +259,27 @@ const ONBURO_SECTIONS = [
     icon: "🏢",
     questions: [
       "Personel üniforma talimatlarına uygun mu?",
-      "Personel odaları gezilip uygunluk ve her tip düzen incelendi mi?",
-      "Odalarda / alanlarda talepler var mı?",
+      "Personel odaları gezilip uygunluk ve tertip düzen incelendi mi?",
+      "Odalardan / alanlardan istek ve talepler yok mu?",
       "Odalar arası diyalog kontrol altında mı?",
       "Gelen yazılar takip ediliyor mu?",
       "Özlük işleri tam işliyor mu?",
-      "Revirde ilaç eksiği var mı?",
+      "Revirde ilaç eksiği yok mu?",
       "Mola ve yemek saatlerine uyuluyor mu?",
-      "Tasarım ve grafik sosyal medya iyi mi?",
-      "Ruhsat alanları incelendi mi?",
-      "Konservatuar CRM'e bakıldı mı?",
-      "Kayıt görüşme evrakları düzenli mi?",
-      "Kayıt linkine gelen bildirimlere bakıldı mı?",
-      "Doğum günü ve özel gün paylaşımı hazırlandı mı?"
+      "Tasarım ve grafik sosyal medya paylaşımları iyi mi?",
+      "Veli gezdirme rink alanları incelendi mi?",
+      "CRM'e bakıldı mı?",
+      "Kayıt görüşme evrakları düzenli mi? Yönetmenden alındı mı?",
+      "Kayıt linkine gelen bildirimlere bakıldı ve aranıp randevular oluşturuldu mu?",
+      "Doğum günü ve özel gün paylaşımı hazırlandı mı?",
+      "Geçmiş datalara bakılıp aranması ve takip edilmesi gereken kayıtlar incelendi mi?",
+      "Okulda birimlerin özel bir etkinliği veya çalışması var mı? Müdürlere soruldu mu?",
+      "Etkinlik takvimi incelendi ve programa uyuluyor mu?",
+      "Drive'daki kayıt formlarına değişiklikler işlendi mi?",
+      "Kıyafet satış alanı düzenli mi?",
+      "Eksik kıyafetler merkezden isteniyor mu?",
+      "Fotokopi için izin formları isteniyor mu?",
+      "İş sağlığı ve güvenliği tedbiri alınmış mı?"
     ]
   },
   {
@@ -253,10 +290,15 @@ const ONBURO_SECTIONS = [
       "Görev deski tertipli ve düzenli mi?",
       "Personel görevi esnasında duyarlı ve dikkatli mi? Göreve engel sağlık sorunu var mı?",
       "Personel şikayeti var mı? Sıralı Amirlerini tanıyor mu? Aksaklıkları aktarıyor mu?",
-      "Ön lobi temiz mi? Tvler açık mı? Koyalıklar temiz mi?",
+      "Ön lobi temiz mi? Tvler açık mı? Kupalıklar temiz mi?",
       "Personel gelenlere karşı güler yüzlü ve kurumda saygıda kusur etmiyor mu?",
-      "Giriş saatleri müdüre atıldı mı?",
-      "Kartı olmayan öğrencilerin siparişi verildi mi?"
+      "Giriş çıkış saatleri müdürlere atıldı mı?",
+      "Kartı olmayan öğrencilerin siparişi verildi mi?",
+      "Drive'daki kayıt formlarına değişiklikler işlendi mi?",
+      "İş sağlığı ve güvenliği tedbiri alınmış mı?",
+      "Talep formları imzalı biçimde genel müdüre sunuluyor mu?",
+      "Talep formları ile ilgili en az üç yerden fiyat alınmış mı?",
+      "Ödemesi yapılan talep formlarına notlar alınıp tekrar ödeme yapılmaması sağlanıyor mu?"
     ]
   }
 ];
@@ -268,12 +310,20 @@ const PERSONEL_SECTIONS = [
     questions: [
       "Güvenlik forması temiz ve uygun mu?",
       "Dedektör, X-ray, turnike alanı temiz ve çalışıyor mu?",
-      "Veli kaydı alınıp içeri bilgi verildikten sonra danışmaya kadar eşlik ediliyor mu?",
+      "Veli kaydı deftere işlenip alınıp içeri bilgi verildikten sonra danışmaya kadar eşlik ediliyor mu?",
       "Bekleme alanının temizliği ve tertibi konusunda hassas mı?",
       "Dışarıya öğrenciyi izinsiz çıkarmıyor mu?",
       "Ön taraf araç trafiğini kontrol edip düzenliyor mu?",
       "İçeri giren araçlara refakat ediliyor mu?",
-      "Güvenlik önü ve çıkışının temizliği, camlar vs. tamam mı?"
+      "Güvenlik önü ve çıkışının temizliği, camlar vs. tamam mı?",
+      "Kurslara kalan öğrencilerin isimleri müdürlüklerden alınıp kontrollü giriş çıkış sağlandı mı?",
+      "Spor kurs liste ve saatleri alınıp listeler üzerinden giriş çıkış sağlandı mı?",
+      "Çıkıştan sonra lobi ve idari odalar kilitlendi mi?",
+      "Akşam rinkler atılıyor mu?",
+      "Giriş kartı olmayan öğrencilerin isimleri danışma ve müdürlüğüne bildiriliyor mu?",
+      "Kameralar bilgisayarda açık şekilde gözlem yapılıyor mu?",
+      "Gelen kargolar düzenli biçimde zamanında danışmaya ve sahibine iletiliyor mu?",
+      "İş sağlığı ve güvenliği tedbiri alınmış mı?"
     ]
   },
   {
@@ -281,19 +331,32 @@ const PERSONEL_SECTIONS = [
     icon: "🧹",
     questions: [
       "Personel üniforması talimatlara uygun mu? Tam mı?",
-      "Tutulması gereken dosya / dafter / talimat vb. tutuluyor mu? Ekipman eksiği var mı?",
+      "Tutulması gereken dosya / dafter / talimat vb. tutuluyor mu?",
+      "Ekipman eksiği var mı?",
       "Ekibin sorumlu olduğu alanlar gezildi mi? Temizlik alanları denetlendi mi?",
-      "Ekibin sorumluluk alanları ile ilgili görülen aksaklık var mı?",
-      "Personel şikayeti var mı? Sıralı Amirlerini tanıyor mu? Aksaklıkları aktarıyor mu?",
-      "Kampüs içlerinde planlanan iş programı var mı?",
-      "Kimyasal / MSDS / Ürün bilgi formları var mı?",
-      "Kimyasal ve sarf malzemeleri güvenli alanda tutuluyor mu?",
-      "Makine parkında arıza veya çalışmayan var mı?",
+      "Ekibin sorumluluk alanları ile ilgili görülen aksaklık var mı? Uyarıldı ve eksik giderildi mi?",
+      "Personel şikayeti yok mu?",
+      "Personel Sıralı Amirlerini tanıyor mu?",
+      "Personel aksaklıkları ve arızaları aktarıyor mu?",
+      "Kampüs içerisinde planlanan iş programı var mı? Görevlendirme yapılıyor mu?",
+      "Kimyasal / MSDS / Ürün bilgi formları var mı? Bu ürünler güvenli yerde mi?",
+      "Kimyasal ve sarf malzemeleri güvenli alanda, öğrencinin ulaşamayacağı yerde tutuluyor mu?",
+      "Makinalar çalışıyor ve düzenli yerde mi?",
       "Sınıf camları ve akıllı tahtaların tozu alındı mı?",
       "Sınıf cam kilitleri kontrol edilmiş mi?",
       "Sınıf sıraları silinmiş ve temizlenmiş mi?",
       "Sınıflardaki kırık ve arızalar için arıza kaydı açılmış mı?",
-      "Tuvalet sabunluk ve peçete tedariki yapılmış mı?"
+      "Tuvalet sabunluk ve peçete tedariki yapılmış mı?",
+      "Tenefüslerden sonra tuvaletlerde lavabolar, çöp kutuları, peçetelik ve sabunlar kontrol ediliyor mu?",
+      "Tenefüs aralarında sınıf havalandırıldı, çöpler kontrol edilip koridor ve sınıftaki kaba pislikler alındı mı?",
+      "Gün sonu tüm sınıfların temizliği tamamlanıp ışık, klima ve akıllı tahtalar kapatıldı mı?",
+      "Kayıp ve bulunanlar için bir alan oluşturulup bulunanlar oraya bırakıldı mı?",
+      "Kantin alanı temiz ve masalar düzenli mi?",
+      "Kantin fiyatları güncel ve panoda yazıyor mu?",
+      "Yemekhane temiz, musluklar sağlam ve peçeteler takılı mı?",
+      "İki birim arası yemekhane temizleniyor mu?",
+      "Depolara giriş çıkış düzenli ve sayımı yapılıp envanter çizelgesi var mı?",
+      "İş sağlığı ve güvenliği tedbiri alınmış mı?"
     ]
   },
   {
@@ -304,14 +367,21 @@ const PERSONEL_SECTIONS = [
       "Personelin sorumlu olduğu alanlar gezildi mi? Bütün alanlar denetlendi mi?",
       "Personelin sorumluluk alanları ile ilgili görülen aksaklık var mı?",
       "Tesisin kritik noktaları biliniyor mu?",
-      "Personel şikayeti var mı? Sıralı Amirlerini tanıyor mu? Aksaklıkları aktarıyor mu?",
       "Kampüs içerisinde oluşan arızaları zamanında müdahale ediliyor mu?",
       "Personel kullanması gereken ekipman ve malzeme yeterli mi?",
       "Kampüs içerisinde arıza durumunda görev ve sorumluluklarını biliyor mu?",
       "Arıza anında İSG kurallarına uygun çalışıyor mu?",
       "Açılan arıza kayıtlarına dönüş sağlanmış ve takibi yapılmış mı?",
       "Çalışmayan sistemler hakkında ilgililere bilgi verildi mi?",
-      "Reji düzenli mi?"
+      "Reji düzenli mi?",
+      "Kamera sistemleri çalışıyor ve doğru alanı gösteriyor mu?",
+      "Çalışmayan ve arızalı sistemler ile ilgili bilgiyi amirine veriyor ve takibini yapıyor mu?",
+      "Akıllı tahta güvenliği, temizliği ve bakımını yapıyor mu?",
+      "Bilgisayarların bakımı ve arızalarını gideriyor mu?",
+      "İnternet problemlerine anında cevap veriyor mu?",
+      "Teknik malzemeyi düzenli ve alanında saklıyor mu?",
+      "Zimmet çizelgesi yapıldı ve kontrolü sağlanıyor mu?",
+      "İş sağlığı ve güvenliği tedbiri alınmış mı?"
     ]
   },
   {
@@ -319,9 +389,12 @@ const PERSONEL_SECTIONS = [
     icon: "🌳",
     questions: [
       "Hayvan yemleri verildi mi?",
-      "Deşilmesi ve ekilmesi gereken yerler deşilip ekildi mi?",
+      "Bahçe alanlarında deşilmesi ve ekilmesi gereken yerler deşilip ekildi mi?",
       "Veteriner gerektiren bir durum oluşmadı mı?",
-      "Ağaçlar budanıp sulama yapıldı mı?"
+      "Ağaçlar budanıp sulama yapıldı mı?",
+      "Hayvanların alanı temizlendi mi?",
+      "Hayvanların bulunduğu kafesler kontrollü ve güvenli mi?",
+      "İş sağlığı ve güvenliği tedbiri alınmış mı?"
     ]
   }
 ];
@@ -331,12 +404,63 @@ let totalQ = 0;
 let arizaList = [];
 let arizaCounter = 0;
 
+var SIFRELER = { onburo: 'buro321', personel: 'personel321' };
+var unlockedTabs = { onburo: false, personel: false, ariza: true };
+var pendingTab = null;
+
 function switchTab(tab) {
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-  event.currentTarget.classList.add('active');
+  if (tab === 'ariza') {
+    activateTab(tab);
+    return;
+  }
+  if (unlockedTabs[tab] === true) {
+    activateTab(tab);
+    return;
+  }
+  pendingTab = tab;
+  var titles = { onburo: 'Ön Büro & Danışma', personel: 'Personel' };
+  document.getElementById('pass-title').textContent = '🔒 ' + titles[tab];
+  document.getElementById('pass-desc').textContent = 'Bu bölüme erişmek için şifrenizi giriniz.';
+  document.getElementById('pass-input').value = '';
+  document.getElementById('pass-error').textContent = '';
+  document.getElementById('pass-input').classList.remove('wrong');
+  document.getElementById('pass-overlay').classList.add('show');
+  setTimeout(function() { document.getElementById('pass-input').focus(); }, 150);
+}
+
+function activateTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
+  document.querySelectorAll('.tab-panel').forEach(function(p) { p.classList.remove('active'); });
+  document.getElementById('tabbtn-' + tab).classList.add('active');
   document.getElementById('panel-' + tab).classList.add('active');
 }
+
+function checkPass() {
+  var input = document.getElementById('pass-input').value.trim();
+  var dogru = SIFRELER[pendingTab];
+  if (input === dogru) {
+    unlockedTabs[pendingTab] = true;
+    document.getElementById('pass-overlay').classList.remove('show');
+    activateTab(pendingTab);
+    pendingTab = null;
+  } else {
+    document.getElementById('pass-input').classList.add('wrong');
+    document.getElementById('pass-error').textContent = '❌ Hatalı şifre, tekrar deneyin.';
+    document.getElementById('pass-input').value = '';
+    setTimeout(function() { document.getElementById('pass-input').classList.remove('wrong'); }, 400);
+  }
+}
+
+function cancelPass() {
+  document.getElementById('pass-overlay').classList.remove('show');
+  pendingTab = null;
+}
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' && document.getElementById('pass-overlay').classList.contains('show')) {
+    checkPass();
+  }
+});
 
 function buildSections(sections, containerId, tabKey, submitBtnId) {
   const container = document.getElementById(containerId);
