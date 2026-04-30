@@ -412,6 +412,7 @@ body{font-family:sans-serif;background:#0a1628;color:#e8f4fd;display:flex;flex-d
         <div style="display:flex;justify-content:space-between;font-size:0.78rem;"><span style="color:#6b8cae;">Sistem</span><span style="font-weight:700;color:#16a34a;">● Aktif</span></div>
       </div>
     </div>
+    <button onclick="cikisYap()" style="width:100%;padding:12px;background:rgba(220,38,38,0.15);border:1px solid rgba(220,38,38,0.3);border-radius:12px;color:#dc2626;font-family:sans-serif;font-weight:800;font-size:0.85rem;cursor:pointer;margin-bottom:12px;">🚪 Çıkış Yap</button>
     <div style="font-size:0.68rem;color:#6b8cae;text-align:center;padding:10px 0;">CREATED BY ✦ ESY YAZILIM</div>
   </div>
 
@@ -453,7 +454,7 @@ body{font-family:sans-serif;background:#0a1628;color:#e8f4fd;display:flex;flex-d
 </div>
 
 <script>
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyFNR27T-q9rNlXtuTVlkwu2fgjhURKWKNaSe-sOi-Kw5MY920Dgx78hyZwQ7Yz4E-u/exec";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw0XqxTQpbCjaJauS2e1hz5FtJKfkOxz2BKXCgTdwJz_pblFOywIpnq79L11rtmlJJrmQ/exec";
 
 var ROLES = { 'buro321':'buro', 'personel321':'personel', 'admin321':'admin' };
 var currentRole = null;
@@ -957,6 +958,13 @@ function playAlertSound(){
 }
 
 function yenile(){ veriCek(); }
+
+function cikisYap() {
+  try { localStorage.removeItem('eduRole'); } catch(e){}
+  currentRole = null;
+  activatePanel('ariza');
+  document.getElementById('nav-ariza').classList.add('active');
+}
 
 // FAB Menu
 function toggleFabMenu() {
